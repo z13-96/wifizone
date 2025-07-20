@@ -1,0 +1,44 @@
+language = "nodejs"
+run = "npm run dev"
+entrypoint = "backend/src/server.js"
+
+[nix]
+channel = "stable-22_11"
+
+[env]
+NODE_ENV = "development"
+PORT = "3000"
+DATABASE_URL = "postgresql://postgres:password@localhost:5432/wifizone"
+JWT_SECRET = "your_jwt_secret_for_replit"
+MTN_MOMO_API_KEY = "simulation_key"
+MOOV_MONEY_API_KEY = "simulation_key"
+ORANGE_MONEY_API_KEY = "simulation_key"
+NEXT_PUBLIC_API_URL = "https://$REPL_SLUG.$REPL_OWNER.repl.co/api"
+NEXT_PUBLIC_SOCKET_URL = "https://$REPL_SLUG.$REPL_OWNER.repl.co"
+
+[packager]
+language = "nodejs"
+
+[packager.features]
+packageSearch = true
+guessImports = true
+
+[languages.javascript]
+pattern = "**/*.js"
+syntax = "javascript"
+
+[languages.typescript]
+pattern = "**/*.ts"
+syntax = "typescript"
+
+[languages.json]
+pattern = "**/*.json"
+syntax = "json"
+
+[languages.sql]
+pattern = "**/*.sql"
+syntax = "sql"
+
+[languages.prisma]
+pattern = "**/*.prisma"
+syntax = "prisma" 

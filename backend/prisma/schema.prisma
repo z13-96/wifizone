@@ -1,0 +1,273 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modèle Utilisateur
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  phone         String   @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          UserRole @default(CLIENT)
+  isActive      Boolean  @default(true)
+  isVerified    Boolean  @default(false)
+  avatar        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  sellerProfile    SellerProfile?
+  tickets          Ticket[]
+  purchases        Purchase[]
+  withdrawals      Withdrawal[]
+  notifications    Notification[]
+  supportTickets   SupportTicket[]
+  transactions     Transaction[]
+
+  @@map("users")
+}
+
+// Profil Vendeur
+model SellerProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  businessName    String
+  businessAddress String?
+  commissionRate  Float    @default(0.05) // 5% par défaut
+  balance         Float    @default(0)
+  totalSales      Float    @default(0)
+  totalWithdrawn  Float    @default(0)
+  isApproved      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tickets         Ticket[]
+  withdrawals     Withdrawal[]
+
+  @@map("seller_profiles")
+}
+
+// Tickets Wi-Fi
+model Ticket {
+  id              String        @id @default(cuid())
+  sellerId        String
+  name            String
+  description     String?
+  duration        Int           // en minutes
+  price           Float
+  quantity        Int           @default(1)
+  remainingQty    Int           @default(1)
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  seller          SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  purchases       Purchase[]
+
+  @@map("tickets")
+}
+
+// Achats
+model Purchase {
+  id              String        @id @default(cuid())
+  userId          String
+  ticketId        String
+  quantity        Int           @default(1)
+  unitPrice       Float
+  totalAmount     Float
+  paymentMethod   PaymentMethod
+  paymentStatus   PaymentStatus @default(PENDING)
+  transactionId   String?       @unique
+  ticketCode      String?       // Code du ticket généré
+  expiresAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticket          Ticket        @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  transaction     Transaction?
+
+  @@map("purchases")
+}
+
+// Transactions de paiement
+model Transaction {
+  id              String        @id @default(cuid())
+  purchaseId      String?       @unique
+  userId          String
+  amount          Float
+  currency        String        @default("XOF")
+  paymentMethod   PaymentMethod
+  status          PaymentStatus @default(PENDING)
+  providerRef     String?       // Référence du fournisseur de paiement
+  providerData    Json?         // Données supplémentaires du fournisseur
+  errorMessage    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  purchase        Purchase?     @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
+
+// Retraits
+model Withdrawal {
+  id              String            @id @default(cuid())
+  sellerId        String
+  amount          Float
+  status          WithdrawalStatus  @default(PENDING)
+  paymentMethod   PaymentMethod
+  accountDetails  Json              // Détails du compte (numéro téléphone, etc.)
+  adminNotes      String?
+  processedAt     DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relations
+  seller          SellerProfile     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@map("withdrawals")
+}
+
+// Notifications
+model Notification {
+  id              String            @id @default(cuid())
+  userId          String
+  title           String
+  message         String
+  type            NotificationType
+  isRead          Boolean           @default(false)
+  data            Json?             // Données supplémentaires
+  createdAt       DateTime          @default(now())
+
+  // Relations
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// Tickets de support
+model SupportTicket {
+  id              String            @id @default(cuid())
+  userId          String
+  subject         String
+  message         String
+  status          SupportStatus     @default(OPEN)
+  priority        Priority          @default(MEDIUM)
+  assignedTo      String?           // ID de l'admin assigné
+  resolvedAt      DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relations
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  responses       SupportResponse[]
+
+  @@map("support_tickets")
+}
+
+// Réponses aux tickets de support
+model SupportResponse {
+  id              String        @id @default(cuid())
+  ticketId        String
+  userId          String        // ID de l'utilisateur qui répond
+  message         String
+  isFromAdmin     Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+
+  // Relations
+  ticket          SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("support_responses")
+}
+
+// Logs système
+model SystemLog {
+  id              String        @id @default(cuid())
+  level           LogLevel
+  message         String
+  context         Json?
+  userId          String?
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime      @default(now())
+
+  @@map("system_logs")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  SELLER
+  CLIENT
+}
+
+enum PaymentMethod {
+  MTN_MOBILE_MONEY
+  MOOV_MONEY
+  ORANGE_MONEY
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSED
+}
+
+enum NotificationType {
+  PURCHASE_SUCCESS
+  PURCHASE_FAILED
+  WITHDRAWAL_APPROVED
+  WITHDRAWAL_REJECTED
+  TICKET_EXPIRING
+  SYSTEM_ALERT
+}
+
+enum SupportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+  FATAL
+} 

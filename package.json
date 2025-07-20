@@ -1,0 +1,55 @@
+{
+  "name": "wifizone",
+  "version": "1.0.0",
+  "description": "Plateforme de vente de tickets WiFi avec paiements mobile money",
+  "main": "backend/src/server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "setup:db": "cd backend && npx prisma generate && npx prisma migrate dev --name init",
+    "studio": "cd backend && npx prisma studio",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "replit:setup": "npm run install:all && npm run setup:db && npm run start:services",
+    "replit:start": "npm run start:services",
+    "start:services": "concurrently \"npm run start:postgres\" \"npm run start:redis\" \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:postgres": "pg_ctl -D /tmp/postgres_data -l /tmp/postgres.log start",
+    "start:redis": "redis-server --daemonize yes",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start"
+  },
+  "keywords": [
+    "wifi",
+    "tickets",
+    "mobile-money",
+    "ivory-coast",
+    "nextjs",
+    "express",
+    "postgresql",
+    "prisma"
+  ],
+  "author": "WiFiZone Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/wifizone.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/wifizone/issues"
+  },
+  "homepage": "https://github.com/your-username/wifizone#readme"
+} 
